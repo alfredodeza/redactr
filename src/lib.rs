@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use serde::Deserialize;
+use std::collections::HashMap;
 
 // load the regex-fules.json file to provide configs
 const JSON: &str = include_str!("../regex-rules.json");
@@ -10,7 +10,6 @@ struct JSONRuleConfig {
     placeholder: String,
     comment: String,
 }
-
 
 // Define a struct to hold rule configuration
 pub struct Rule {
@@ -48,7 +47,6 @@ impl Rule {
 
 // Load the rules from a configuration file (JSON)
 pub fn load_rule_configs() -> Vec<Rule> {
-
     let loaded_json: Vec<JSONRuleConfig> = serde_json::from_str(JSON).unwrap();
 
     let mut rules: Vec<Rule> = Vec::new();

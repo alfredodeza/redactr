@@ -1,15 +1,14 @@
-use regex::Regex;
-use redactr::load_rule_configs;
-use actix_web::{get, post, App, HttpResponse, HttpServer, Responder, web};
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use psutil::memory;
+use redactr::load_rule_configs;
+use regex::Regex;
 use serde::Serialize;
 use std::time::{SystemTime, UNIX_EPOCH};
-
 
 // Health endpoint JSON
 #[derive(Serialize)]
 struct HealthCheck {
-name: String,
+    name: String,
     status: String,
 }
 
@@ -21,7 +20,6 @@ struct HealthStatus {
     checks: Vec<HealthCheck>,
 }
 
-#[get("/health")]
 async fn health() -> impl Responder {
     let mut checks = vec![];
 
@@ -60,7 +58,6 @@ async fn health() -> impl Responder {
     HttpResponse::Ok().json(health_status)
 }
 
-
 async fn index() -> impl Responder {
     let html = r#"<!DOCTYPE html>
 <html lang="en">
@@ -83,7 +80,6 @@ async fn index() -> impl Responder {
     HttpResponse::Ok().body(html)
 }
 
-#[post("/redact")]
 async fn redact(input_text: web::Json<String>) -> impl Responder {
     let mut rules = load_rule_configs();
 
@@ -107,19 +103,20 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .service(web::resource("/").route(web::get().to(index)))
-            .service(redact)
-            .service(health)
+            .service(web::resource("/redact").route(web::post().to(redact)))
+            .service(web::resource("/health").route(web::get().to(health)))
     })
     .bind("127.0.0.1:8080")?
     .run()
     .await
 }
 
+// Functional Tests
 
 #[cfg(test)]
 mod tests {
     use actix_web::{http::header::ContentType, test, web, App};
-
+    use pretty_assertions::assert_eq;
     use super::*;
 
     #[actix_web::test]
@@ -133,9 +130,31 @@ mod tests {
     }
 
     #[actix_web::test]
-    async fn test_index_post() {
-        let app = test::init_service(App::new().route("/", web::get().to(index))).await;
-        let req = test::TestRequest::post().uri("/").to_request();
+    async fn test_redact_post() {
+        let app = test::init_service(App::new().route("/redact", web::post().to(redact))).await;
+        let req = test::TestRequest::post()
+            .uri("/redact")
+            .set_json(&serde_json::json!(
+                "Alfred Smith and John Doe went to the store."
+            ))
+            .to_request();
+        let resp = test::call_service(&app, req).await;
+        assert!(resp.status().is_success());
+        let body_bytes = test::read_body(resp).await;
+        let body_str = std::str::from_utf8(&body_bytes).unwrap();
+        assert_eq!(
+            body_str,
+            r#"Person1 and Person2 went to the store."#
+        );
+    }
+
+    #[actix_web::test]
+    async fn test_redact_post_invalid() {
+        let app = test::init_service(App::new().route("/redact", web::post().to(redact))).await;
+        let req = test::TestRequest::post()
+            .uri("/redact")
+            .set_payload("data=Alfred Smith and John Doe went to the store.")
+            .to_request();
         let resp = test::call_service(&app, req).await;
         assert!(resp.status().is_client_error());
     }
