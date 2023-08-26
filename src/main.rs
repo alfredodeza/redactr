@@ -115,9 +115,9 @@ async fn main() -> std::io::Result<()> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use actix_web::{http::header::ContentType, test, web, App};
     use pretty_assertions::assert_eq;
-    use super::*;
 
     #[actix_web::test]
     async fn test_index_get() {
@@ -142,10 +142,7 @@ mod tests {
         assert!(resp.status().is_success());
         let body_bytes = test::read_body(resp).await;
         let body_str = std::str::from_utf8(&body_bytes).unwrap();
-        assert_eq!(
-            body_str,
-            r#"Person1 and Person2 went to the store."#
-        );
+        assert_eq!(body_str, r#"Person1 and Person2 went to the store."#);
     }
 
     #[actix_web::test]
