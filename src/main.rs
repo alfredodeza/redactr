@@ -38,7 +38,7 @@ async fn health() -> impl Responder {
     let memory = memory_usage.percent();
     checks.push(HealthCheck {
         name: "Memory usage".to_string(),
-        status: format!("{} %", memory.to_string()),
+        status: format!("{} %", memory),
     });
 
     // Check disk usage
