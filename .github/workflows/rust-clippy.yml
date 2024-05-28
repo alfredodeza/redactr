@@ -37,6 +37,6 @@ jobs:
       - name: Run rust-clippy
         run:
           cargo clippy
-          --all-features
+          --all-features --deny warnings
         continue-on-error: false
 
