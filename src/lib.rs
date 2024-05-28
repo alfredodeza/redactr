@@ -52,7 +52,7 @@ pub fn load_rule_configs() -> Vec<Rule> {
     let mut rules: Vec<Rule> = Vec::new();
     for rule in loaded_json {
         rules.push(Rule::new(
-            format!(r"{}", rule.pattern),
+            rule.pattern.to_string(),
             rule.placeholder,
             rule.comment,
         ));
